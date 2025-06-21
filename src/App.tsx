@@ -9,6 +9,10 @@ import SportsPage from './components/SportsPage';
 import BrandsPage from './components/BrandsPage';
 import NewPage from './components/NewPage';
 import ProductDetailPage from './components/ProductDetailPage';
+import FavoritesPage from './components/FavoritesPage';
+import SalesPage from './components/SalesPage';
+import LoginPage from './components/LoginPage';
+import AllProductsPage from './components/AllProductsPage';
 
 function App() {
   return (
@@ -23,6 +27,10 @@ function App() {
           <Route path="/brands" element={<BrandsPage />} />
           <Route path="/new" element={<NewPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/sale" element={<SalesPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/products" element={<AllProductsPage />} />
         </Routes>
       </Layout>
     </Router>

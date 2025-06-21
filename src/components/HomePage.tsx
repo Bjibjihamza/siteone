@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight,
@@ -8,15 +8,25 @@ import {
   Shield,
   Award,
   TrendingUp,
-  Truck
+  Truck,
+  Clock,
+  Flame
 } from 'lucide-react';
 import { products } from '../data/products';
 import ProductCard from './ProductCard';
 
 const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 23,
+    minutes: 45,
+    seconds: 30
+  });
 
   const featuredProducts = products.slice(0, 6);
+
+  // Flash sale product (first product with discount)
+  const flashSaleProduct = products.find(p => p.originalPrice);
 
   const heroSlides = [
     {
@@ -61,6 +71,26 @@ const HomePage = () => {
       description: 'Competitive pricing guaranteed'
     }
   ];
+
+  // Countdown timer effect
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev.seconds > 0) {
+          return { ...prev, seconds: prev.seconds - 1 };
+        } else if (prev.minutes > 0) {
+          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
+        } else if (prev.hours > 0) {
+          return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        } else {
+          // Reset timer when it reaches 0
+          return { hours: 23, minutes: 59, seconds: 59 };
+        }
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
@@ -135,6 +165,71 @@ const HomePage = () => {
         </div>
       </div>
 
+      {/* Flash Sale Banner */}
+      {flashSaleProduct && (
+        <div className="bg-gradient-to-r from-red-500 to-orange-500 py-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="text-white">
+                <div className="flex items-center mb-4">
+                  <Flame className="w-8 h-8 mr-3 animate-pulse" />
+                  <h2 className="text-3xl font-bold">Flash Sale!</h2>
+                </div>
+                <h3 className="text-2xl font-semibold mb-2">{flashSaleProduct.name}</h3>
+                <div className="flex items-center space-x-4 mb-4">
+                  <span className="text-3xl font-bold">${flashSaleProduct.price}</span>
+                  <span className="text-xl line-through opacity-75">${flashSaleProduct.originalPrice}</span>
+                  <span className="bg-white text-red-600 px-3 py-1 rounded-full font-bold">
+                    {Math.round(((flashSaleProduct.originalPrice! - flashSaleProduct.price) / flashSaleProduct.originalPrice!) * 100)}% OFF
+                  </span>
+                </div>
+                
+                {/* Countdown Timer */}
+                <div className="flex items-center space-x-4 mb-6">
+                  <Clock className="w-5 h-5" />
+                  <span className="text-lg font-medium">Ends in:</span>
+                  <div className="flex space-x-2">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-center">
+                      <div className="text-2xl font-bold">{timeLeft.hours.toString().padStart(2, '0')}</div>
+                      <div className="text-xs">Hours</div>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-center">
+                      <div className="text-2xl font-bold">{timeLeft.minutes.toString().padStart(2, '0')}</div>
+                      <div className="text-xs">Minutes</div>
+                    </div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg px-3 py-2 text-center">
+                      <div className="text-2xl font-bold">{timeLeft.seconds.toString().padStart(2, '0')}</div>
+                      <div className="text-xs">Seconds</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <Link 
+                  to={`/product/${flashSaleProduct.id}`}
+                  className="bg-white text-red-600 font-semibold py-3 px-8 rounded-xl hover:bg-slate-100 transition-colors inline-flex items-center space-x-2"
+                >
+                  <span>Shop Now</span>
+                  <ArrowRight size={20} />
+                </Link>
+              </div>
+              
+              <div className="flex justify-center">
+                <div className="relative">
+                  <img 
+                    src={flashSaleProduct.image} 
+                    alt={flashSaleProduct.name}
+                    className="w-80 h-80 object-cover rounded-2xl shadow-2xl"
+                  />
+                  <div className="absolute -top-4 -right-4 bg-yellow-400 text-black font-bold text-lg px-4 py-2 rounded-full animate-bounce">
+                    HOT DEAL!
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Features Section */}
       <div className="bg-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -169,7 +264,7 @@ const HomePage = () => {
 
         <div className="text-center mt-12">
           <Link 
-            to="/new"
+            to="/products"
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg inline-block"
           >
             View All Products

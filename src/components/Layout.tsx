@@ -51,8 +51,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   4
                 </span>
               </div>
-              <Heart className="w-6 h-6 text-slate-600 hover:text-red-500 cursor-pointer transition-colors" />
-              <User className="w-6 h-6 text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors" />
+              <Link to="/favorites">
+                <Heart className="w-6 h-6 text-slate-600 hover:text-red-500 cursor-pointer transition-colors" />
+              </Link>
+              <Link to="/login">
+                <User className="w-6 h-6 text-slate-600 hover:text-indigo-600 cursor-pointer transition-colors" />
+              </Link>
             </div>
           </div>
         </div>

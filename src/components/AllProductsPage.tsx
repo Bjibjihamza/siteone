@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Filter, Grid3X3, List } from 'lucide-react';
-import { getProductsByGender } from '../data/products';
+import { products } from '../data/products';
 import ProductCard from './ProductCard';
 import FilterSidebar from './FilterSidebar';
 
-const MenPage = () => {
+const AllProductsPage = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState('featured');
@@ -15,12 +15,10 @@ const MenPage = () => {
     priceRange: { min: 0, max: 500 }
   });
 
-  const menProducts = getProductsByGender('men');
-
   // Get unique filter values
-  const categories = [...new Set(menProducts.map(p => p.category))];
-  const brands = [...new Set(menProducts.map(p => p.brand))];
-  const sizes = [...new Set(menProducts.flatMap(p => p.sizes))];
+  const categories = [...new Set(products.map(p => p.category))];
+  const brands = [...new Set(products.map(p => p.brand))];
+  const sizes = [...new Set(products.flatMap(p => p.sizes))];
 
   const handleFilterChange = (filterType: string, value: any) => {
     setSelectedFilters(prev => ({
@@ -39,7 +37,7 @@ const MenPage = () => {
   };
 
   // Apply filters
-  let filteredProducts = menProducts.filter(product => {
+  let filteredProducts = products.filter(product => {
     if (selectedFilters.categories.length > 0 && !selectedFilters.categories.includes(product.category)) {
       return false;
     }
@@ -74,15 +72,15 @@ const MenPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Hero Section */}
-      <div className="relative h-64 bg-gradient-to-r from-blue-600 to-indigo-700 overflow-hidden">
+      <div className="relative h-64 bg-gradient-to-r from-indigo-600 to-purple-600 overflow-hidden">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              Men's Collection
+              All Products
             </h1>
             <p className="text-xl text-white/90 max-w-2xl">
-              Explore our comprehensive range of men's athletic and lifestyle footwear.
+              Discover our complete collection of premium footwear for every style and occasion.
             </p>
           </div>
         </div>
@@ -93,9 +91,9 @@ const MenPage = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Men's Shoes ({sortedProducts.length})
+              All Products ({sortedProducts.length})
             </h2>
-            <p className="text-slate-600">Performance meets style in every step</p>
+            <p className="text-slate-600">Complete collection of premium footwear</p>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -205,4 +203,4 @@ const MenPage = () => {
   );
 };
 
-export default MenPage;
+export default AllProductsPage;

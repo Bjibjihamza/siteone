@@ -2,24 +2,74 @@ import React, { useState } from 'react';
 import { Filter, Grid3X3, List } from 'lucide-react';
 import { getProductsByGender } from '../data/products';
 import ProductCard from './ProductCard';
+import FilterSidebar from './FilterSidebar';
 
 const KidsPage = () => {
   const [viewMode, setViewMode] = useState('grid');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState('featured');
+  const [selectedFilters, setSelectedFilters] = useState({
+    categories: [] as string[],
+    brands: [] as string[],
+    sizes: [] as string[],
+    priceRange: { min: 0, max: 500 }
+  });
 
   const kidsProducts = getProductsByGender('kids');
 
-  const categories = [
-    { id: 'all', name: 'All', count: kidsProducts.length },
-    { id: 'running', name: 'Running', count: kidsProducts.filter(p => p.category === 'running').length },
-    { id: 'lifestyle', name: 'Lifestyle', count: kidsProducts.filter(p => p.category === 'lifestyle').length },
-    { id: 'training', name: 'Training', count: kidsProducts.filter(p => p.category === 'training').length }
-  ];
+  // Get unique filter values
+  const categories = [...new Set(kidsProducts.map(p => p.category))];
+  const brands = [...new Set(kidsProducts.map(p => p.brand))];
+  const sizes = [...new Set(kidsProducts.flatMap(p => p.sizes))];
 
-  const filteredProducts = selectedCategory === 'all' 
-    ? kidsProducts 
-    : kidsProducts.filter(product => product.category === selectedCategory);
+  const handleFilterChange = (filterType: string, value: any) => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setSelectedFilters({
+      categories: [],
+      brands: [],
+      sizes: [],
+      priceRange: { min: 0, max: 500 }
+    });
+  };
+
+  // Apply filters
+  let filteredProducts = kidsProducts.filter(product => {
+    if (selectedFilters.categories.length > 0 && !selectedFilters.categories.includes(product.category)) {
+      return false;
+    }
+    if (selectedFilters.brands.length > 0 && !selectedFilters.brands.includes(product.brand)) {
+      return false;
+    }
+    if (selectedFilters.sizes.length > 0 && !selectedFilters.sizes.some(size => product.sizes.includes(size))) {
+      return false;
+    }
+    if (product.price < selectedFilters.priceRange.min || product.price > selectedFilters.priceRange.max) {
+      return false;
+    }
+    return true;
+  });
+
+  // Apply sorting
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'newest':
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
+      default:
+        return 0;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -43,7 +93,7 @@ const KidsPage = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Kids' Shoes ({filteredProducts.length})
+              Kids' Shoes ({sortedProducts.length})
             </h2>
             <p className="text-slate-600">Perfect shoes for growing feet and active adventures</p>
           </div>
@@ -80,46 +130,76 @@ const KidsPage = () => {
               </button>
             </div>
             
-            <button className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors">
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition-colors lg:hidden"
+            >
               <Filter size={16} />
               <span className="text-sm font-medium">Filter</span>
             </button>
           </div>
         </div>
 
-        {/* Category Filter */}
-        <div className="flex flex-wrap gap-2 mb-8">
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                selectedCategory === category.id
-                  ? 'bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-lg'
-                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              {category.name} ({category.count})
-            </button>
-          ))}
-        </div>
-
-        {/* Products Grid */}
-        <div className={`grid gap-6 ${
-          viewMode === 'grid' 
-            ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-            : 'grid-cols-1'
-        }`}>
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-500 text-lg">No products found in this category.</p>
+        <div className="flex gap-8">
+          {/* Filter Sidebar */}
+          <div className="hidden lg:block lg:w-80 flex-shrink-0">
+            <FilterSidebar
+              isOpen={true}
+              onClose={() => {}}
+              filters={{
+                categories,
+                brands,
+                sizes,
+                priceRange: { min: 0, max: 500 }
+              }}
+              selectedFilters={selectedFilters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+            />
           </div>
-        )}
+
+          {/* Mobile Filter */}
+          <div className="lg:hidden">
+            <FilterSidebar
+              isOpen={isFilterOpen}
+              onClose={() => setIsFilterOpen(false)}
+              filters={{
+                categories,
+                brands,
+                sizes,
+                priceRange: { min: 0, max: 500 }
+              }}
+              selectedFilters={selectedFilters}
+              onFilterChange={handleFilterChange}
+              onClearFilters={clearFilters}
+            />
+          </div>
+
+          {/* Products Grid */}
+          <div className="flex-1">
+            {sortedProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-slate-500 text-lg">No products found with the selected filters.</p>
+                <button
+                  onClick={clearFilters}
+                  className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            ) : (
+              <div className={`grid gap-6 ${
+                viewMode === 'grid' 
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3' 
+                  : 'grid-cols-1'
+              }`}>
+                {sortedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
