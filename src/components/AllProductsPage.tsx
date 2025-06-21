@@ -1,19 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filter, Grid3X3, List } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { products } from '../data/products';
 import ProductCard from './ProductCard';
 import FilterSidebar from './FilterSidebar';
 
 const AllProductsPage = () => {
+  const location = useLocation();
   const [viewMode, setViewMode] = useState('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [sortBy, setSortBy] = useState('featured');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState({
     categories: [] as string[],
     brands: [] as string[],
     sizes: [] as string[],
     priceRange: { min: 0, max: 500 }
   });
+
+  // Get search query from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const search = urlParams.get('search');
+    if (search) {
+      setSearchQuery(search);
+    }
+  }, [location.search]);
 
   // Get unique filter values
   const categories = [...new Set(products.map(p => p.category))];
@@ -34,10 +46,24 @@ const AllProductsPage = () => {
       sizes: [],
       priceRange: { min: 0, max: 500 }
     });
+    setSearchQuery('');
   };
 
-  // Apply filters
+  // Apply search and filters
   let filteredProducts = products.filter(product => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const matchesSearch = 
+        product.name.toLowerCase().includes(query) ||
+        product.brand.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query) ||
+        product.description.toLowerCase().includes(query);
+      
+      if (!matchesSearch) return false;
+    }
+
+    // Other filters
     if (selectedFilters.categories.length > 0 && !selectedFilters.categories.includes(product.category)) {
       return false;
     }
@@ -77,23 +103,50 @@ const AllProductsPage = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              All Products
+              {searchQuery ? `Search Results for "${searchQuery}"` : 'All Products'}
             </h1>
             <p className="text-xl text-white/90 max-w-2xl">
-              Discover our complete collection of premium footwear for every style and occasion.
+              {searchQuery 
+                ? `Found ${sortedProducts.length} products matching your search`
+                : 'Discover our complete collection of premium footwear for every style and occasion.'
+              }
             </p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Search Results Info */}
+        {searchQuery && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800">
+              Showing {sortedProducts.length} results for "<strong>{searchQuery}</strong>"
+              {sortedProducts.length === 0 && (
+                <span className="block mt-2 text-sm">
+                  Try adjusting your search terms or browse our categories above.
+                </span>
+              )}
+            </p>
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="mt-2 text-sm text-blue-600 hover:text-blue-700 underline"
+              >
+                Clear search
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Filters and Controls */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              All Products ({sortedProducts.length})
+              {searchQuery ? 'Search Results' : 'All Products'} ({sortedProducts.length})
             </h2>
-            <p className="text-slate-600">Complete collection of premium footwear</p>
+            <p className="text-slate-600">
+              {searchQuery ? 'Products matching your search' : 'Complete collection of premium footwear'}
+            </p>
           </div>
           
           <div className="flex items-center space-x-4">
@@ -177,12 +230,17 @@ const AllProductsPage = () => {
           <div className="flex-1">
             {sortedProducts.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-slate-500 text-lg">No products found with the selected filters.</p>
+                <p className="text-slate-500 text-lg mb-4">
+                  {searchQuery 
+                    ? `No products found for "${searchQuery}"`
+                    : 'No products found with the selected filters.'
+                  }
+                </p>
                 <button
                   onClick={clearFilters}
-                  className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  Clear all filters
+                  {searchQuery ? 'Clear search and filters' : 'Clear all filters'}
                 </button>
               </div>
             ) : (

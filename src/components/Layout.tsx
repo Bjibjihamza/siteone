@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Heart, 
   ShoppingCart, 
@@ -13,9 +13,19 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
   };
 
   return (
@@ -33,14 +43,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             {/* Search */}
             <div className="hidden md:flex items-center max-w-md w-full mx-8">
-              <div className="relative w-full">
+              <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
                 <input
                   type="text"
                   placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200"
                 />
-              </div>
+              </form>
             </div>
 
             {/* Actions */}
@@ -72,7 +84,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               { name: 'Kids', path: '/kids' },
               { name: 'Sports', path: '/sports' },
               { name: 'Brands', path: '/brands' },
-              { name: 'New', path: '/new' }
+              { name: 'New', path: '/new' },
+              { name: 'All Products', path: '/products' }
             ].map((item) => (
               <Link
                 key={item.name}
@@ -98,6 +111,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Search */}
+      <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3">
+        <form onSubmit={handleSearch} className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-100 border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all duration-200"
+          />
+        </form>
+      </div>
 
       {/* Main Content */}
       <main>

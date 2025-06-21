@@ -7,6 +7,7 @@ import FilterSidebar from './FilterSidebar';
 const SalesPage = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [sortBy, setSortBy] = useState('discount-high');
   const [selectedFilters, setSelectedFilters] = useState({
     categories: [] as string[],
     brands: [] as string[],
@@ -17,7 +18,7 @@ const SalesPage = () => {
   // Get products on sale (with originalPrice)
   const saleProducts = products.filter(product => product.originalPrice);
 
-  // Get unique filter values
+  // Get unique filter values from sale products
   const categories = [...new Set(saleProducts.map(p => p.category))];
   const brands = [...new Set(saleProducts.map(p => p.brand))];
   const sizes = [...new Set(saleProducts.flatMap(p => p.sizes))];
@@ -55,6 +56,30 @@ const SalesPage = () => {
     return true;
   });
 
+  // Apply sorting
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'discount-high':
+        const discountA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+        const discountB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+        return discountB - discountA;
+      case 'discount-low':
+        const discountA2 = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+        const discountB2 = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+        return discountA2 - discountB2;
+      case 'price-low':
+        return a.price - b.price;
+      case 'price-high':
+        return b.price - a.price;
+      case 'rating':
+        return b.rating - a.rating;
+      case 'newest':
+        return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
+      default:
+        return 0;
+    }
+  });
+
   // Calculate total savings
   const totalSavings = saleProducts.reduce((total, product) => {
     if (product.originalPrice) {
@@ -62,6 +87,16 @@ const SalesPage = () => {
     }
     return total;
   }, 0);
+
+  // Calculate average discount
+  const averageDiscount = saleProducts.length > 0 
+    ? saleProducts.reduce((total, product) => {
+        if (product.originalPrice) {
+          return total + ((product.originalPrice - product.price) / product.originalPrice) * 100;
+        }
+        return total;
+      }, 0) / saleProducts.length
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -91,14 +126,14 @@ const SalesPage = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600 mb-2">${totalSavings.toFixed(2)}</div>
-              <div className="text-slate-600">Total Savings</div>
+              <div className="text-slate-600">Total Savings Available</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600 mb-2 flex items-center justify-center">
                 <Clock size={20} className="mr-2" />
-                Limited Time
+                {averageDiscount.toFixed(0)}%
               </div>
-              <div className="text-slate-600">Offers Expire Soon</div>
+              <div className="text-slate-600">Average Discount</div>
             </div>
           </div>
         </div>
@@ -107,13 +142,15 @@ const SalesPage = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Sale Products ({filteredProducts.length})
+              Sale Products ({sortedProducts.length})
             </h2>
             <p className="text-slate-600">Amazing deals on premium footwear</p>
           </div>
           
           <div className="flex items-center space-x-4">
             <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="discount-high">Highest Discount</option>
@@ -121,6 +158,7 @@ const SalesPage = () => {
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
               <option value="newest">Newest</option>
+              <option value="rating">Highest Rated</option>
             </select>
             
             <div className="flex items-center space-x-2">
@@ -189,7 +227,7 @@ const SalesPage = () => {
 
           {/* Products Grid */}
           <div className="flex-1">
-            {filteredProducts.length === 0 ? (
+            {sortedProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Percent className="w-16 h-16 text-slate-300 mx-auto mb-6" />
                 <p className="text-slate-500 text-lg">No sale products found with the selected filters.</p>
@@ -206,11 +244,11 @@ const SalesPage = () => {
                   ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3' 
                   : 'grid-cols-1'
               }`}>
-                {filteredProducts.map((product) => (
+                {sortedProducts.map((product) => (
                   <div key={product.id} className="relative">
                     <ProductCard product={product} />
                     {product.originalPrice && (
-                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold z-10">
                         -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
                       </div>
                     )}
@@ -228,9 +266,19 @@ const SalesPage = () => {
             <p className="text-lg mb-6 opacity-90">
               These incredible deals won't last forever. Shop now and save big on premium footwear.
             </p>
-            <button className="bg-white text-red-600 font-semibold py-3 px-8 rounded-xl hover:bg-slate-100 transition-colors">
-              Shop All Sales
-            </button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
+                <div className="text-2xl font-bold">{saleProducts.length}</div>
+                <div className="text-sm opacity-90">Items on Sale</div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-6 py-3">
+                <div className="text-2xl font-bold">Up to {Math.max(...saleProducts.map(p => p.originalPrice ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100) : 0))}%</div>
+                <div className="text-sm opacity-90">Max Discount</div>
+              </div>
+              <button className="bg-white text-red-600 font-semibold py-3 px-8 rounded-xl hover:bg-slate-100 transition-colors">
+                Shop All Sales
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -238,4 +286,4 @@ const SalesPage = () => {
   );
 };
 
-export default SalesPage; 
+export default SalesPage;
